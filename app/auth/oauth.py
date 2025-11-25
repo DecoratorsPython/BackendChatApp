@@ -1,0 +1,1 @@
+# Everything specific to Google/Facebook OAuth, including the returning of a profile for the service layer
