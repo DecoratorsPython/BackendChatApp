@@ -6,7 +6,8 @@ class Settings(BaseSettings):
     google_client_id: str
     google_client_secret: str
     google_redirect_url: str
-
+    session_secret_key: str
+    
     class Config:
         env_file = ".env"
 
