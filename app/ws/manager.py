@@ -1,0 +1,1 @@
+# Manager that stores active WebSocket connections
