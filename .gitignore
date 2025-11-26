@@ -1,8 +1,11 @@
 # Python
 __pycache__/
+versions/
 *.py[cod]
 *.pyo
 *.pyd
+*.pyc
+*.gz
 *.env
 .env
 .env.*
@@ -17,6 +20,11 @@ env/
 
 # VS Code
 .vscode/
+.idea/
+*.iml
+
+# PyCharm
+*.ipynb_checkpoints
 
 # OS files
 .DS_Store
@@ -29,6 +37,11 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Testing
+.coverage
+htmlcov/
+pytest_cache/
 
 # Docker
 *.pid
