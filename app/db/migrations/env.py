@@ -20,7 +20,7 @@ print("ALEMBIC ENV: running migrations...")
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
-    In this mode we don't need a DB connection; Alembic va genera SQL.
+    In this mode we don't need a DB connection.
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -35,10 +35,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    Aici ne conectăm la DB și rulăm efectiv migrațiile.
-    """
+    """Run migrations in 'online' mode."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",

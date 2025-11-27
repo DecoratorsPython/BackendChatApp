@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, Text, DateTime, ForeignKey, Index
@@ -54,7 +55,7 @@ class MessageReceipt(Base):
     seen_at = Column(DateTime, nullable=True)
 
     __table_args__ = (
-        # extra index pentru interogări
         Index("idx_receipts_user_seen", "user_id", "seen_at"),
         Index("idx_receipts_message", "message_id"),
     )
+

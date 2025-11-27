@@ -1,30 +1,20 @@
 from alembic import op
 import sqlalchemy as sa
 
-from sqlalchemy import create_engine
 from app.db.base import Base
 
 # revision identifiers, used by Alembic.
-revision = '9edb02db3d3c'
+revision = "9edb02db3d3c"
 down_revision = None
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
-    
-    engine = create_engine(
-        "postgresql+psycopg2://chat_user:chat_pass@localhost:5433/chat_dev",
-        future=True
-    )
-
-    
-    Base.metadata.create_all(bind=engine)
+    bind = op.get_bind()         
+    Base.metadata.create_all(bind=bind)
 
 
 def downgrade() -> None:
-    engine = create_engine(
-        "postgresql+psycopg2://chat_user:chat_pass@localhost:5433/chat_dev",
-        future=True
-    )
-    Base.metadata.drop_all(bind=engine)
+    bind = op.get_bind()
+    Base.metadata.drop_all(bind=bind)
