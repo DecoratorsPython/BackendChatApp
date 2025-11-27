@@ -1,4 +1,3 @@
-# app/db/models/conversation.py
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, Boolean, DateTime, ForeignKey

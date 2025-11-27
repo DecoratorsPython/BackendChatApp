@@ -3,17 +3,14 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from app.db.base import Base  # Base cu toate modelele tale
+from app.db.base import Base  
 
-# This is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+
 config = context.config
 
-# Interpret the config file for Python logging.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# <<< AICI îi dăm lui Alembic metadata-ul modelelor tale >>>
 target_metadata = Base.metadata
 
 print("ALEMBIC ENV: tables =", list(target_metadata.tables.keys()))

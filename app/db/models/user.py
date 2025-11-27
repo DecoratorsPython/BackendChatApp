@@ -1,4 +1,3 @@
-# app/db/models/user.py
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, UniqueConstraint, ForeignKey
@@ -11,14 +10,14 @@ class User(Base):
 
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    # profil
+    # profile
     username = Column(String(100), unique=False, nullable=True)
     email = Column(String(255), unique=True, nullable=True)
     avatar_url = Column(TEXT, nullable=True)
 
     # OAuth
-    provider = Column(String(50), nullable=False)      # ex: 'google'
-    provider_sub = Column(String(255), nullable=False) # sub de la Google
+    provider = Column(String(50), nullable=False)      # 'google'
+    provider_sub = Column(String(255), nullable=False) # sub from Google
 
     # meta
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

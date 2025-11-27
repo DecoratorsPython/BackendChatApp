@@ -1,4 +1,3 @@
-# app/db/models/message.py
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, Text, DateTime, ForeignKey, Index
