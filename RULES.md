@@ -107,3 +107,5 @@ Where:
   pre-commit install
 - if you want to skip the verification step, use --no-verify:
   git commit --no-verify -m "TASK-1-Example"
+- to apply to already existing files
+  pre-commit run --all-files

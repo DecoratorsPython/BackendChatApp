@@ -2,8 +2,6 @@
 
 branch="$(git rev-parse --abbrev-ref HEAD | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
-echo "DEBUG branch: '$branch'" >&2
-
 regex='^(feature|fix|test)/TASK-[0-9]+(-[a-zA-Z0-9_-]+)?$'
 
 if ! printf '%s\n' "$branch" | grep -Eq "$regex"; then
