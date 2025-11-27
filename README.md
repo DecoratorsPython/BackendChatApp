@@ -11,3 +11,11 @@ How to run the project (work in progress):
   alembic upgrade head
 - check the existent tables
   docker exec -it chat_db psql -U chat_user -d chat_dev -c "\dt"
+
+If you want to update the database:
+- change in the models (create new tables, add new columns)
+- then, add in app\db\base.py the import of the class table
+- then, run "alembic revision --autogenerate -m "commit message"
+- then, run alembic upgrade head
+- check in the database if no error occurs
+ 

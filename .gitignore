@@ -4,7 +4,6 @@
 venv/
 
 __pycache__/
-versions/
 
 .vscode/
 .idea/
@@ -22,3 +21,6 @@ htmlcov/
 pytest_cache/
 
 *.pyc
+
+.ruff-cache/
+.mypy_cache/
