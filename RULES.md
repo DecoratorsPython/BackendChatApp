@@ -102,7 +102,7 @@ Where:
 ## 4. How to apply the pre-commit hooks
 
 - install in the local virtual environment the libraries from requirements.txt:
-  pip install requirements.txt
+  pip install -r requirements.txt
 - in the same folder, install the pre-commit:
   pre-commit install
 - if you want to skip the verification step, use --no-verify:
