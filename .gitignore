@@ -22,3 +22,6 @@ htmlcov/
 pytest_cache/
 
 *.pyc
+
+.ruff-cache/
+.mypy_cache/
