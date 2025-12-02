@@ -1,8 +1,11 @@
 # Environment variables configuration
-
 from pydantic_settings import BaseSettings
-
+ 
 class Settings(BaseSettings):
+    # For Google OAuth
+    google_client_id: str
+    google_client_secret: str
+    google_redirect_url: str
     DATABASE_URL: str
 
     class Config:

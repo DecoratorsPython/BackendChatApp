@@ -1,7 +1,22 @@
+# Python
+__pycache__/
+versions/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.gz
+*.env
 .env
+.env.*
+*.sqlite3
+*.db
 
-.venv/
+# Virtual environments
 venv/
+ENV/
+env/
+.venv/
 
 __pycache__/
 
@@ -9,17 +24,29 @@ __pycache__/
 .idea/
 *.iml
 
-*.log
-*.pid
-*.gz
-*.sqlite3
-
+# PyCharm
 *.ipynb_checkpoints
 
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Testing
 .coverage
 htmlcov/
 pytest_cache/
 
+# Docker
+*.pid
+*.tar
 *.pyc
 
 .ruff-cache/
