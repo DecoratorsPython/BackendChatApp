@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.oauth import oauth, fetch_google_userinfo
 from app.services.auth_service import AuthService
-from app.db.base import get_db
+from app.db.deps import get_db
 
 router = APIRouter(tags=["auth"])
 
