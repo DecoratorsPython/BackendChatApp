@@ -57,6 +57,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
+    print("ALEMBIC url", config.get_main_option("sqlalchemy.url"))
 
     with context.begin_transaction():
         context.run_migrations()
