@@ -1,6 +1,6 @@
 # Python
 __pycache__/
-versions/
+# versions/
 *.py[cod]
 *.pyo
 *.pyd
