@@ -37,6 +37,7 @@ pre_commit==4.5.0
 psycopg2-binary==2.9.11
 python-dotenv==1.2.1
 PyYAML==6.0.3
+PyJWT>=2.8.0
 SQLAlchemy==2.0.44
 typing_extensions==4.15.0
 virtualenv==20.35.4
