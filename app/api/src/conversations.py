@@ -5,21 +5,12 @@ from typing import List
 from app.repositories.conversation_repository import get_user_conversations_with_last_message_and_unread_count
 from app.api.deps import get_db, get_current_user
 from app.db.models.user import User
-from pydantic import BaseModel
+
 
 router = APIRouter()
 
-class MessageOut(BaseModel):
-    message_id: str
-    content: str
-    sent_at: str
-
-class ConversationOut(BaseModel):
-    conversation_id: str
-    is_group: bool
-    created_at: str
-    last_message: MessageOut | None
-    unread_count: int
+from app.schemas.message.message_out import MessageOut
+from app.schemas.conversation.conversation_out import ConversationOut
 
 @router.get("/conversations/me", response_model=List[ConversationOut])
 def get_my_conversations(
