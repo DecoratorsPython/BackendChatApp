@@ -21,6 +21,10 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class LogoutRequest(BaseModel):
+    refresh_token: str
+
+
 class InvalidRefreshTokenError(Exception):
     """Raised when a refresh token is unknown / malformed / not found in DB."""
     pass
