@@ -2,13 +2,13 @@
 # - upsert user (creates and updates the user);
 # - issue tokens
 # - refresh access
-
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.db.models.user import User
 from app.core.security import create_access_token
+from app.auth.tokens import create_refresh_token
 
 
 def normalize_email(email: str | None) -> str | None:
@@ -76,7 +76,9 @@ class AuthService:
                     self.db.refresh(user)
             except SQLAlchemyError as db_err:
                 self.db.rollback()
-                raise Exception("Database error during user update") from db_err
+                raise Exception(
+                    "Database error during user update"
+                ) from db_err
         else:
             try:
                 user = User(
@@ -98,10 +100,17 @@ class AuthService:
         return user
 
 
-    def issue_access_token_for_user(self, user: User) -> str:
-        if not user or not getattr(user, "user_id", None):
-            raise ValueError("User object missing user_id")
+    def issue_tokens_for_user(self, user: User) -> dict:
+        user_id = str(user.user_id)
         try:
-            return create_access_token(str(user.user_id))
+            access = create_access_token(user_id)
+            refresh = create_refresh_token(self.db, user_id)
         except Exception as err:
-            raise Exception("Error issuing access token") from err
+            raise RuntimeError(
+                f"Failed to issue tokens for user: {err}"
+            ) from err
+        return {
+            "access_token": access,
+            "refresh_token": refresh,
+            "token_type": "bearer",
+        }
