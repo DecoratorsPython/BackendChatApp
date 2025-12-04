@@ -27,13 +27,13 @@ def get_user_conversations_with_last_message_and_unread_count(db: Session, user_
                 Message.sent_at > participant.last_read_at
             )
         ).count()
-        # identifică id-ul userului cu care conversezi (altul decât user_id)
+
         other_participant_id = None
         if conv.is_group:
-            # pentru grup, nu există un singur "celălalt" user
+            # for group conversation - for future use cases
             other_participant_id = None
         else:
-            # pentru conversație 1-la-1, găsește celălalt user
+            # for 1-to-1 conversation, find the other user
             other = db.query(ConversationParticipant).filter(
                 ConversationParticipant.conversation_id == conv.conversation_id,
                 ConversationParticipant.user_id != user_id
@@ -44,6 +44,7 @@ def get_user_conversations_with_last_message_and_unread_count(db: Session, user_
             'conversation': conv,
             'last_message': last_msg,
             'unread_count': unread_count,
+            'user_id': user_id,
             'other_user_id': other_participant_id
         })
     return result
