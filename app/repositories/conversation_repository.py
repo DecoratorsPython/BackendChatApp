@@ -30,6 +30,7 @@ def get_user_conversations_with_last_message_and_unread_count(db: Session, user_
         result.append({
             'conversation': conv,
             'last_message': last_msg,
-            'unread_count': unread_count
+            'unread_count': unread_count,
+            'user_id': user_id
         })
     return result

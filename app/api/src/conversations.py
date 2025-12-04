@@ -5,12 +5,10 @@ from typing import List
 from app.repositories.conversation_repository import get_user_conversations_with_last_message_and_unread_count
 from app.api.deps import get_db, get_current_user
 from app.db.models.user import User
-
+from app.schemas.message_out import MessageOut
+from app.schemas.conversation_out import ConversationOut
 
 router = APIRouter()
-
-from app.schemas.message.message_out import MessageOut
-from app.schemas.conversation.conversation_out import ConversationOut
 
 @router.get("/conversations/me", response_model=List[ConversationOut])
 def get_my_conversations(
