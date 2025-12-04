@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     access_token_ttl_seconds: int = 600
+    refresh_token_ttl_days: int = 30
 
     class Config:
         env_file = ".env"
