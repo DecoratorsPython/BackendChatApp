@@ -3,11 +3,11 @@ from fastapi import APIRouter, Request, Depends, HTTPException
 from starlette.responses import JSONResponse
 from authlib.integrations.starlette_client import OAuthError
 from sqlalchemy.orm import Session
-
 from app.auth.oauth import oauth, fetch_google_userinfo
 from app.services.auth_service import AuthService
 from app.db.deps import get_db
-from app.auth.tokens import RefreshRequest, LogoutRequest
+from app.schemas.refresh_request import RefreshRequest
+from app.schemas.logout_request import LogoutRequest
 from app.core.deps import get_current_user
 from app.db.models.user import User
 from app.core.security import create_access_token
