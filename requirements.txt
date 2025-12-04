@@ -40,3 +40,4 @@ PyYAML==6.0.3
 SQLAlchemy==2.0.44
 typing_extensions==4.15.0
 virtualenv==20.35.4
+email-validator==2.0.0
