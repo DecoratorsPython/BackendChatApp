@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.db.models.user import RefreshToken 
-from app.schemas.refresh_request import RefreshTokenData
+from app.schemas.refresh_token_data import RefreshTokenData
 from app.core.exceptions import InvalidRefreshTokenError, ExpiredRefreshTokenError, RevokedRefreshTokenError
 
 
@@ -52,7 +52,9 @@ def verify_refresh_token(db: Session, token_str: str) -> RefreshTokenData:
             .one_or_none()
         )
     except Exception as err:
-        raise RuntimeError(f"Database error during refresh token lookup: {err}") from err
+        raise RuntimeError(
+            f"Database error during refresh token lookup: {err}"
+        ) from err
 
     if not rt:
         raise InvalidRefreshTokenError("Unknown refresh token")
