@@ -1,14 +1,6 @@
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
-
-
-class FriendRequestByEmail(BaseModel):
-    email: EmailStr
-
-
-class FriendshipBase(BaseModel):
-    user_id: UUID
+from pydantic import BaseModel
 
 
 class FriendshipResponse(BaseModel):
@@ -19,4 +11,4 @@ class FriendshipResponse(BaseModel):
     accepted_at: datetime | None = None
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
