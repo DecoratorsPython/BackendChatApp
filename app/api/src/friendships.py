@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.db.deps import get_db
-from app.core.deps import get_current_user # needs to be implemented
+from app.core.deps import get_current_user
 from app.db.models.user import User, Friendship
 from app.schemas.friendship import (
     FriendRequestByEmail,
@@ -46,7 +46,6 @@ def safe_commit(db: Session) -> None:
         db.commit()
     except SQLAlchemyError:
         db.rollback()
-        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="A database error occurred. Please try again later.",
@@ -63,15 +62,26 @@ def safe_commit(db: Session) -> None:
 def send_friend_request_by_email(
     payload: FriendRequestByEmail,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Send a friend request to a user by email.
     """
 
     me_id: UUID = current_user.user_id
+    me_email: str | None = current_user.email  # extract the mail if available
 
-    # 1. Find target user by email
+    # Debug log 
+    print(f"[FriendRequest] Sender id={me_id}, email={me_email}")
+
+    # 1. Prevent sending to self by email (extra safety)
+    if me_email is not None and payload.email == me_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot send a friend request to yourself.",
+        )
+
+    # 2. Find target user by email
     target: User | None = (
         db.query(User).filter(User.email == payload.email).first()
     )
@@ -83,13 +93,14 @@ def send_friend_request_by_email(
 
     target_id: UUID = target.user_id
 
+    # 3. Prevent sending to self by user_id (in case email check was skipped)
     if me_id == target_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot send a friend request to yourself.",
         )
 
-    # 2. Check if friendship already exists
+    # 4. Check if friendship already exists
     existing = get_friendship(db, me_id, target_id)
     if existing:
         raise HTTPException(
@@ -97,7 +108,7 @@ def send_friend_request_by_email(
             detail=f"Friendship already exists with status: {existing.status}",
         )
 
-    # 3. Create new friendship with 'pending' status
+    # 5. Create new friendship with 'pending' status
     u1, u2 = normalize_pair(me_id, target_id)
     friendship = Friendship(
         user_id_1=u1,
@@ -122,13 +133,17 @@ def send_friend_request_by_email(
 )
 def list_incoming_requests(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """
     List all pending friend requests where the current user is one of the two.
     Frontend can filter who is the sender/receiver if needed.
     """
     me_id: UUID = current_user.user_id
+    me_email: str | None = current_user.email 
+
+    # Debug
+    print(f"[IncomingRequests] Current user id={me_id}, email={me_email}")
 
     requests = (
         db.query(Friendship)
@@ -149,12 +164,14 @@ def list_incoming_requests(
 def accept_friend_request(
     other_user_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Accept a pending friend request between current_user and other_user_id.
     """
     me_id: UUID = current_user.user_id
+    me_email: str | None = current_user.email  
+
     u1, u2 = normalize_pair(me_id, other_user_id)
 
     friendship: Friendship | None = (
@@ -191,13 +208,15 @@ def accept_friend_request(
 def reject_friend_request(
     other_user_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Reject a pending friend request.
     We simply delete the row here.
     """
     me_id: UUID = current_user.user_id
+    me_email: str | None = current_user.email  
+
     u1, u2 = normalize_pair(me_id, other_user_id)
 
     friendship: Friendship | None = (
@@ -219,6 +238,6 @@ def reject_friend_request(
     db.delete(friendship)
     safe_commit(db)
 
-    # TODO: notify sender that the request was rejected (optional).
+    # TODO: notify sender that the request was rejected.
 
     return {"detail": "Friend request rejected."}
