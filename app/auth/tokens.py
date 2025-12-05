@@ -8,32 +8,8 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.db.models.user import RefreshToken 
-
-
-class RefreshTokenData(BaseModel):
-    token_id: str
-    user_id: str
-    expires_at: datetime
-    revoked: bool
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class InvalidRefreshTokenError(Exception):
-    """Raised when a refresh token is unknown / malformed / not found in DB."""
-    pass
-
-
-class ExpiredRefreshTokenError(Exception):
-    """Raised when a refresh token is past its expiry."""
-    pass
-
-
-class RevokedRefreshTokenError(Exception):
-    """Raised when a refresh token has been revoked or already rotated."""
-    pass
+from app.schemas.refresh_token_data import RefreshTokenData
+from app.core.exceptions import InvalidRefreshTokenError, ExpiredRefreshTokenError, RevokedRefreshTokenError
 
 
 def _now_utc() -> datetime:
@@ -76,7 +52,9 @@ def verify_refresh_token(db: Session, token_str: str) -> RefreshTokenData:
             .one_or_none()
         )
     except Exception as err:
-        raise RuntimeError(f"Database error during refresh token lookup: {err}") from err
+        raise RuntimeError(
+            f"Database error during refresh token lookup: {err}"
+        ) from err
 
     if not rt:
         raise InvalidRefreshTokenError("Unknown refresh token")
