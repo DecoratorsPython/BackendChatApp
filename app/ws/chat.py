@@ -12,9 +12,10 @@ router = APIRouter()
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/chat/{user_id}")
-async def websocket_chat(websocket: WebSocket, user_id: str):
+@router.websocket("/chat")
+async def user_chat(websocket: WebSocket):
     token = websocket.query_params.get("token")
+
     if not token:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
@@ -26,21 +27,23 @@ async def websocket_chat(websocket: WebSocket, user_id: str):
         return
 
     sender_id = str(token_data.sub)
-    recipient_id = str(user_id)
-
-    if not are_friends(sender_id, recipient_id):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
 
     await manager.connect(sender_id, websocket)
 
     try:
         while True:
-            message = await websocket.receive_text()
+            data = await websocket.receive_json()
 
-            await manager.send_personal_message(message, recipient_id)
+            recipient_id = data.get("to")
+            message = data.get("message")
 
-            await websocket.send_json({"status": "sent", "to": recipient_id})
+            if not are_friends(sender_id, recipient_id):
+                await websocket.send_json({"status": "Not friends"})
+            else:
+                await manager.send_personal_message(message, recipient_id)
+                await websocket.send_json(
+                    {"status": "Sent", "to": recipient_id}
+                )
 
     except WebSocketDisconnect:
-        await manager.disconnect(user_id=sender_id)
+        await manager.disconnect(websocket)

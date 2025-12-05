@@ -5,29 +5,37 @@ from fastapi import WebSocket
 
 class ConnectionManager:
     def __init__(self) -> None:
-        self._conversations: dict[str, set[WebSocket]] = {}
+        self._connections: list[WebSocket] = []
         self._lock = asyncio.Lock()
 
-    async def connect(
-        self, conversation_id: str, websocket: WebSocket
-    ) -> None:
+    async def connect(self, user_id: str, websocket: WebSocket) -> None:
         await websocket.accept()
-        async with self._lock:
-            if conversation_id not in self._conversations:
-                self._conversations[conversation_id] = set()
-            self._conversations[conversation_id].add(websocket)
+        websocket.scope["user_id"] = user_id
 
-    async def disconnect(self, user_id: str) -> None:
-        websocket = self._active_connections.pop(user_id, None)
+        async with self._lock:
+            self._connections.append(websocket)
+
+    async def disconnect(self, websocket: WebSocket) -> None:
+        async with self._lock:
+            if websocket in self._connections:
+                self._connections.remove(websocket)
+
         await websocket.close()
 
-    async def send_personal_message(self, message: str, user_id: str) -> bool:
-        websocket = self._active_connections.get(user_id)
-        if websocket is None:
-            return False
+    async def send_personal_message(self, message: dict, user_id: str) -> None:
+        target = None
+
+        async with self._lock:
+            for websocket in self._connections:
+                if websocket.scope.get("user_id") == user_id:
+                    target = websocket
+                    break
+
         try:
-            await websocket.send_text(message)
-            return True
+            await target.send_json(message)
         except Exception:
-            await self.disconnect(user_id=user_id)
-            return False
+            async with self._lock:
+                if target in self._connections:
+                    self._connections.remove(target)
+
+            await target.close()
