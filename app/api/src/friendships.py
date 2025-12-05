@@ -9,6 +9,7 @@ from app.db.models.user import User
 from app.schemas.friend_request import FriendRequestByEmail
 from app.schemas.friendship_response import FriendshipResponse
 
+from app.repositories.user_repository import get_user_by_email
 from app.repositories import friendship_repository as repo
 
 router = APIRouter(prefix="/friends", tags=["friends"])
@@ -38,15 +39,13 @@ def send_friend_request_by_email(
         )
 
     # 1. Find target user by email
-    target: User | None = (
-        db.query(User).filter(User.email == payload.email).first()
-    )
+    target = get_user_by_email(db, payload.email)
+    
     if not target:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User with this email does not exist.",
-        )
-
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="User with this email does not exist.",
+    )
     target_id: UUID = target.user_id
 
     # 2. Prevent sending to self by id
