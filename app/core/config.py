@@ -1,6 +1,6 @@
 # Environment variables configuration
+from functools import lru_cache
 from pydantic_settings import BaseSettings
-from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -12,15 +12,19 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str
-
-    # JWT / auth
-    jwt_secret: str = Field(..., alias="JWT_SECRET")
-    jwt_algorithm: str = Field("HS256", alias="JWT_ALGORITHM")
-    access_token_ttl_seconds: int = Field(600, alias="ACCESS_TOKEN_TTL_SECONDS")
+    jwt_secret: str
+    jwt_algorithm: str = "HS256"
+    access_token_ttl_seconds: int = 600
+    refresh_token_ttl_days: int = 30
 
     class Config:
         env_file = ".env"
-        extra = "ignore"  
 
 
-settings = Settings()
+@lru_cache
+def get_settings():
+    return Settings()
+
+
+settings = get_settings()
+

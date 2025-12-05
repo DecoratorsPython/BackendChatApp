@@ -1,5 +1,6 @@
-from app.db.base import get_db
+from app.db.deps import get_db
 from app.db.models.user import User
+
 
 def print_all_users():
     db = next(get_db())

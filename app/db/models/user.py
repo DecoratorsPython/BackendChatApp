@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, UniqueConstraint, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, TEXT
+from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 
@@ -46,3 +47,50 @@ class Friendship(Base):
     status = Column(String(20), nullable=False)  # 'pending' | 'accepted' | 'blocked'
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     accepted_at = Column(DateTime, nullable=True)
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    token_id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    # the opaque refresh token string sent to the client
+    token = Column(String(255), unique=True, nullable=False)
+
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    expires_at = Column(
+        DateTime,
+        nullable=False,
+    )
+
+    # if not null → user or server has revoked that token
+    revoked_at = Column(
+        DateTime,
+        nullable=True,
+    )
+
+    # used to trace chained refresh-token rotations
+    rotated_from = Column(
+        UUID(as_uuid=True),
+        ForeignKey("refresh_tokens.token_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # optional: see all rotated tokens
+    previous_token = relationship("RefreshToken", remote_side=[token_id])
