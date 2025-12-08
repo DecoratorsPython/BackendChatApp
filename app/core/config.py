@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     google_client_secret: str
     google_redirect_url: str
     session_secret_key: str
+
+    # Database
     DATABASE_URL: str
     jwt_secret: str
     jwt_algorithm: str = "HS256"
