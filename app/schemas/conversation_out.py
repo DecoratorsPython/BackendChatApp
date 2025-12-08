@@ -1,5 +1,7 @@
 from pydantic import BaseModel
-from app.schemas.message.message_out import MessageOut
+
+from app.schemas.message_out import MessageOut
+
 
 class ConversationOut(BaseModel):
     conversation_id: str
