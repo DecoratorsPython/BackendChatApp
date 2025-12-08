@@ -30,7 +30,8 @@ def get_my_conversations(
                     content=last_msg.content,
                     sent_at=last_msg.sent_at.isoformat(),
                 ) if last_msg else None,
-                unread_count=conv_meta.unread_count
+                unread_count=conv_meta.unread_count,
+                other_user_id=conv_meta.other_participant_id
             )
         )
     return result
