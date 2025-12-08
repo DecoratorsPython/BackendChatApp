@@ -12,6 +12,8 @@ from app.core.deps import get_current_user
 from app.db.models.user import User
 from app.core.security import create_access_token
 from app.auth.tokens import revoke_refresh_token, revoke_all_for_user
+from starlette.responses import RedirectResponse
+from app.core.config import settings
 from app.auth.tokens import (
     verify_refresh_token,
     rotate_refresh_token,
@@ -74,20 +76,13 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             detail=f"Token issuance error: {err}"
         ) from err
 
-    return JSONResponse(
-        {
-            "access_token": tokens["access_token"],
-            "refresh_token": tokens["refresh_token"],
-            "token_type": tokens["token_type"],
-            "user": {
-                "user_id": str(user.user_id),
-                "username": user.username,
-                "email": user.email,
-                "avatar_url": user.avatar_url,
-                "provider": user.provider,
-            },
-        }
+    redirect_url = (
+        f"{settings.frontend_root_url}"
+        f"?access_token={tokens['access_token']}"
+        f"&refresh_token={tokens['refresh_token']}"
     )
+
+    return RedirectResponse(url=redirect_url)
 
 
 @router.post("/auth/refresh")
