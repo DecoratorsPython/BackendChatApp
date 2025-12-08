@@ -42,3 +42,4 @@ SQLAlchemy==2.0.44
 typing_extensions==4.15.0
 virtualenv==20.35.4
 email-validator==2.0.0
+pytest-asyncio==0.22.0
