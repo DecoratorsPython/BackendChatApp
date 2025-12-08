@@ -7,3 +7,4 @@ class ConversationOut(BaseModel):
     created_at: str
     last_message: MessageOut | None
     unread_count: int
+    other_user_id: str | None = None
