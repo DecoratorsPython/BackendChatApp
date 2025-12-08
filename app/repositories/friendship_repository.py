@@ -1,10 +1,9 @@
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
 
-from fastapi import HTTPException, status
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.db.deps import safe_commit
 from app.db.models.user import Friendship
 
 
@@ -16,22 +15,8 @@ def _normalize_pair(user_id_1: UUID, user_id_2: UUID) -> tuple[UUID, UUID]:
     return tuple(sorted([user_id_1, user_id_2]))
 
 
-def safe_commit(session: Session) -> None:
-    """
-    Commit helper: if commit fails, rollback and raise 500.
-    """
-    try:
-        session.commit()
-    except SQLAlchemyError:
-        session.rollback()
-        
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="A database error occurred. Please try again later.",
-        )
+#  Queries
 
-
-#  Queries 
 
 def get_friendship(
     session: Session, user_id_1: UUID, user_id_2: UUID
@@ -92,7 +77,8 @@ def list_pending_for_user(session: Session, user_id: UUID) -> list[Friendship]:
         session.query(Friendship)
         .filter(
             Friendship.status == "pending",
-            (Friendship.user_id_1 == user_id) | (Friendship.user_id_2 == user_id),
+            (Friendship.user_id_1 == user_id)
+            | (Friendship.user_id_2 == user_id),
         )
         .all()
     )
