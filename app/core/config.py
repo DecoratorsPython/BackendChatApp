@@ -9,10 +9,13 @@ class Settings(BaseSettings):
     google_client_secret: str
     google_redirect_url: str
     session_secret_key: str
+
+    # Database
     DATABASE_URL: str
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     access_token_ttl_seconds: int = 600
+    refresh_token_ttl_days: int = 30
 
     class Config:
         env_file = ".env"
