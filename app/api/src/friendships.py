@@ -25,9 +25,7 @@ def send_friend_request_by_email(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Send a friend request to a user by email.
-    """
+   
     me_id: UUID = current_user.user_id
     me_email: str | None = current_user.email
 
@@ -40,7 +38,7 @@ def send_friend_request_by_email(
 
     # 1. Find target user by email
     target = get_user_by_email(db, payload.email)
-    
+
     if not target:
         raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -79,9 +77,7 @@ def list_incoming_requests(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    List all pending friend requests for the current user.
-    """
+   
     me_id: UUID = current_user.user_id
     requests = repo.list_pending_for_user(db, me_id)
     return requests
@@ -96,9 +92,7 @@ def accept_friend_request(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Accept a pending friend request between current_user and other_user_id.
-    """
+   
     me_id: UUID = current_user.user_id
 
     friendship = repo.get_pending_between(db, me_id, other_user_id)
@@ -124,9 +118,7 @@ def reject_friend_request(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Reject a pending friend request (delete the row).
-    """
+    
     me_id: UUID = current_user.user_id
 
     friendship = repo.get_pending_between(db, me_id, other_user_id)

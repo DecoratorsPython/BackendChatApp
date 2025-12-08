@@ -36,9 +36,7 @@ def safe_commit(session: Session) -> None:
 def get_friendship(
     session: Session, user_id_1: UUID, user_id_2: UUID
 ) -> Friendship | None:
-    """
-    Get friendship row between two users, regardless of order.
-    """
+   
     a, b = _normalize_pair(user_id_1, user_id_2)
     return (
         session.query(Friendship)
@@ -50,9 +48,7 @@ def get_friendship(
 def create_friend_request(
     session: Session, from_id: UUID, to_id: UUID
 ) -> Friendship:
-    """
-    Create a new 'pending' friendship between two users.
-    """
+   
     a, b = _normalize_pair(from_id, to_id)
     friendship = Friendship(
         user_id_1=a,
@@ -69,9 +65,7 @@ def create_friend_request(
 def get_pending_between(
     session: Session, user_id_1: UUID, user_id_2: UUID
 ) -> Friendship | None:
-    """
-    Get a 'pending' friendship between two users, if any.
-    """
+    
     a, b = _normalize_pair(user_id_1, user_id_2)
     return (
         session.query(Friendship)
@@ -85,9 +79,7 @@ def get_pending_between(
 
 
 def list_pending_for_user(session: Session, user_id: UUID) -> list[Friendship]:
-    """
-    List all pending requests where this user is user_1 or user_2.
-    """
+   
     return (
         session.query(Friendship)
         .filter(
@@ -99,9 +91,7 @@ def list_pending_for_user(session: Session, user_id: UUID) -> list[Friendship]:
 
 
 def accept_request(session: Session, friendship: Friendship) -> Friendship:
-    """
-    Mark a pending request as accepted.
-    """
+    
     friendship.status = "accepted"
     friendship.accepted_at = datetime.utcnow()
     safe_commit(session)
@@ -110,8 +100,6 @@ def accept_request(session: Session, friendship: Friendship) -> Friendship:
 
 
 def delete_request(session: Session, friendship: Friendship) -> None:
-    """
-    Delete a pending request (reject).
-    """
+    
     session.delete(friendship)
     safe_commit(session)
