@@ -48,7 +48,11 @@ def create_test_user(db: Session, *, email: str, username: str) -> User:
         created_at=datetime.utcnow(),
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     db.refresh(user)
     return user
 
