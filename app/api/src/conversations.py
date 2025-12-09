@@ -18,8 +18,24 @@ def get_my_conversations(
     conversations = get_user_conversations_with_last_message_and_unread_count(db, current_user.user_id)
     result = []
     for conv_meta in conversations:
-        conv = conv_meta.conversation
-        last_msg = conv_meta.last_message
+        conv = conv_meta['conversation']
+        last_msg = conv_meta['last_message']
+        other_user_id = conv_meta.get('other_user_id')
+        participant_name = None
+        participant_email = None
+        participant_avatar = None
+        participant_last_seen = None
+        last_message_time = last_msg.sent_at.isoformat() if last_msg else None
+
+        if other_user_id:
+            from app.db.models.user import User
+            participant = db.query(User).filter(User.user_id == other_user_id).first()
+            if participant:
+                participant_name = participant.username
+                participant_email = participant.email
+                participant_avatar = participant.avatar_url
+                participant_last_seen = participant.last_login.isoformat() if participant.last_login else None
+
         result.append(
             ConversationOut(
                 conversation_id=str(conv.conversation_id),
@@ -30,8 +46,13 @@ def get_my_conversations(
                     content=last_msg.content,
                     sent_at=last_msg.sent_at.isoformat(),
                 ) if last_msg else None,
-                unread_count=conv_meta.unread_count,
-                other_user_id=conv_meta.other_participant_id
+                last_message_time=last_message_time,
+                unread_count=conv_meta['unread_count'],
+                other_user_id=other_user_id,
+                participant_name=participant_name,
+                participant_email=participant_email,
+                participant_avatar=participant_avatar,
+                participant_last_seen=participant_last_seen
             )
         )
     return result
