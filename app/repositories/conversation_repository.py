@@ -19,14 +19,17 @@ def get_user_conversations_with_last_message_and_unread_count(db: Session, user_
             .order_by(Message.sent_at.desc())
             .first()
         )
-        unread_count = db.query(Message).filter(
-            Message.conversation_id == conv.conversation_id,
-            Message.sender_id != user_id,
-            or_(
-                participant.last_read_at == None,
+        if participant.last_read_at is None:
+            unread_count = db.query(Message).filter(
+                Message.conversation_id == conv.conversation_id,
+                Message.sender_id != user_id
+            ).count()
+        else:
+            unread_count = db.query(Message).filter(
+                Message.conversation_id == conv.conversation_id,
+                Message.sender_id != user_id,
                 Message.sent_at > participant.last_read_at
-            )
-        ).count()
+            ).count()
 
         other_participant_id = None
         if conv.is_group:
