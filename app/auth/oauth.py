@@ -3,8 +3,8 @@
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import HTTPException, Request
-from app.core.config import settings
 
+from app.core.config import settings
 
 oauth = OAuth()
 
@@ -30,12 +30,13 @@ async def fetch_google_userinfo(request: Request) -> dict:
         token = await oauth.google.authorize_access_token(request)
     except OAuthError as error:
         raise HTTPException(
-            status_code=400,
-            detail=f"Google OAuth error: {error}"
+            status_code=400, detail=f"Google OAuth error: {error}"
         ) from error
 
     userinfo = token.get("userinfo")
     if not userinfo:
-        raise HTTPException(status_code=400, detail="No 'userinfo' in Google OAuth response")
+        raise HTTPException(
+            status_code=400, detail="No 'userinfo' in Google OAuth response"
+        )
 
     return userinfo

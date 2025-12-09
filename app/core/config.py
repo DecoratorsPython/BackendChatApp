@@ -1,5 +1,6 @@
 # Environment variables configuration
 from functools import lru_cache
+
 from pydantic_settings import BaseSettings
 
 
@@ -17,6 +18,8 @@ class Settings(BaseSettings):
     access_token_ttl_seconds: int = 600
     refresh_token_ttl_days: int = 30
 
+    frontend_root_url: str
+
     class Config:
         env_file = ".env"
 
@@ -27,4 +30,3 @@ def get_settings():
 
 
 settings = get_settings()
-

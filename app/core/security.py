@@ -1,18 +1,18 @@
 # app/core/security.py
-import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import jwt
 from pydantic import BaseModel, ValidationError
-from app.core.exceptions import InvalidTokenError, ExpiredTokenError
 
 from app.core.config import settings
+from app.core.exceptions import ExpiredTokenError, InvalidTokenError
 
 
 class TokenData(BaseModel):
-    sub: str   # user_id
-    iat: int   # issued at
-    exp: int   # expiry
+    sub: str  # user_id
+    iat: int  # issued at
+    exp: int  # expiry
 
 
 def create_access_token(user_id: str) -> str:

@@ -27,20 +27,19 @@ async def get_friendship(
     """
     a, b = _normalize_pair(user_id_1, user_id_2)
     try:
-        async with session.begin():
-            statement = (
-                select(Friendship)
-                .where(
-                    Friendship.user_id_1 == a,
-                    Friendship.user_id_2 == b,
-                )
-                .limit(1)
+        statement = (
+            select(Friendship)
+            .where(
+                Friendship.user_id_1 == a,
+                Friendship.user_id_2 == b,
             )
+            .limit(1)
+        )
 
-            result = await session.execute(statement)
-            friendship = result.scalars().first()
+        result = await session.execute(statement)
+        friendship = result.scalars().first()
 
-            return friendship
+        return friendship
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -54,19 +53,18 @@ async def create_friend_request(
     """
     a, b = _normalize_pair(from_id, to_id)
     try:
-        async with session.begin():
-            friendship = Friendship(
-                user_id_1=a,
-                user_id_2=b,
-                status="pending",
-                created_at=datetime.now(timezone.utc),
-            )
+        friendship = Friendship(
+            user_id_1=a,
+            user_id_2=b,
+            status="pending",
+            created_at=datetime.now(timezone.utc),
+        )
 
-            session.add(friendship)
-            await session.flush()
-            await session.refresh(friendship)
+        session.add(friendship)
+        await session.flush()
+        await session.refresh(friendship)
 
-            return friendship
+        return friendship
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -80,21 +78,20 @@ async def get_pending_between(
     """
     a, b = _normalize_pair(user_id_1, user_id_2)
     try:
-        async with session.begin():
-            statement = (
-                select(Friendship)
-                .where(
-                    Friendship.user_id_1 == a,
-                    Friendship.user_id_2 == b,
-                    Friendship.status == "pending",
-                )
-                .limit(1)
+        statement = (
+            select(Friendship)
+            .where(
+                Friendship.user_id_1 == a,
+                Friendship.user_id_2 == b,
+                Friendship.status == "pending",
             )
+            .limit(1)
+        )
 
-            result = await session.execute(statement)
-            friendship = result.scalars().first()
+        result = await session.execute(statement)
+        friendship = result.scalars().first()
 
-            return friendship
+        return friendship
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -107,17 +104,16 @@ async def list_pending_for_user(
     List all pending requests where this user is user_1 or user_2.
     """
     try:
-        async with session.begin():
-            statement = select(Friendship).where(
-                Friendship.status == "pending",
-                (Friendship.user_id_1 == user_id)
-                | (Friendship.user_id_2 == user_id),
-            )
+        statement = select(Friendship).where(
+            Friendship.status == "pending",
+            (Friendship.user_id_1 == user_id)
+            | (Friendship.user_id_2 == user_id),
+        )
 
-            result = await session.execute(statement)
-            friendships = result.scalars().all()
+        result = await session.execute(statement)
+        friendships = result.scalars().all()
 
-            return friendships
+        return friendships
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -130,15 +126,14 @@ async def accept_request(
     Mark a pending request as accepted.
     """
     try:
-        async with session.begin():
-            friendship.status = "accepted"
-            friendship.accepted_at = datetime.now(timezone.utc)
-            session.add(friendship)
+        friendship.status = "accepted"
+        friendship.accepted_at = datetime.now(timezone.utc)
+        session.add(friendship)
 
-            await session.flush()
-            await session.refresh(friendship)
+        await session.flush()
+        await session.refresh(friendship)
 
-            return friendship
+        return friendship
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -151,9 +146,8 @@ async def delete_request(
     Delete a pending request (reject).
     """
     try:
-        async with session.begin():
-            session.delete(friendship)
-            await session.flush()
+        await session.delete(friendship)
+        await session.flush()
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err

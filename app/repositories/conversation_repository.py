@@ -12,25 +12,22 @@ async def get_one_to_one_conversation(
     session: AsyncSession, user_a: str, user_b: str
 ) -> Conversation | None:
     try:
-        async with session.begin():
-            sub = (
-                select(ConversationParticipant.conversation_id)
-                .where(ConversationParticipant.user_id.in_([user_a, user_b]))
-                .group_by(ConversationParticipant.conversation_id)
-                .having(func.count(ConversationParticipant.user_id) == 2)
-                .subquery()
-            )
+        sub = (
+            select(ConversationParticipant.conversation_id)
+            .where(ConversationParticipant.user_id.in_([user_a, user_b]))
+            .group_by(ConversationParticipant.conversation_id)
+            .having(func.count(ConversationParticipant.user_id) == 2)
+            .subquery()
+        )
 
-            query = select(Conversation).where(
-                Conversation.conversation_id.in_(
-                    select(sub.c.conversation_id)
-                ),
-                Conversation.is_group.is_(False),
-            )
-            result = await session.execute(query)
-            conversation = result.scalars().first()
+        query = select(Conversation).where(
+            Conversation.conversation_id.in_(select(sub.c.conversation_id)),
+            Conversation.is_group.is_(False),
+        )
+        result = await session.execute(query)
+        conversation = result.scalars().first()
 
-            return conversation
+        return conversation
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -40,29 +37,28 @@ async def create_conversation_with_participants(
     session: AsyncSession, participants: list[str], is_group: bool = False
 ) -> Conversation:
     try:
-        async with session.begin():
-            conversation = Conversation(
-                is_group=is_group, created_at=datetime.now(timezone.utc)
-            )
-            session.add(conversation)
-            await session.flush()
+        conversation = Conversation(
+            is_group=is_group, created_at=datetime.now(timezone.utc)
+        )
+        session.add(conversation)
+        await session.flush()
 
-            rows = []
-            for uid in participants:
-                rows.append(
-                    ConversationParticipant(
-                        conversation_id=conversation.conversation_id,
-                        user_id=uid,
-                        joined_at=datetime.now(timezone.utc),
-                        last_read_message_id=None,
-                        last_read_at=None,
-                    )
+        rows = []
+        for uid in participants:
+            rows.append(
+                ConversationParticipant(
+                    conversation_id=conversation.conversation_id,
+                    user_id=uid,
+                    joined_at=datetime.now(timezone.utc),
+                    last_read_message_id=None,
+                    last_read_at=None,
                 )
+            )
 
-            session.add_all(rows)
-            await session.flush()
+        session.add_all(rows)
+        await session.flush()
 
-            return conversation
+        return conversation
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -75,23 +71,22 @@ async def update_participant_read(
     last_read_message_id: str | None,
 ) -> None:
     try:
-        async with session.begin():
-            statement = (
-                select(ConversationParticipant)
-                .where(
-                    ConversationParticipant.conversation_id == conversation_id,
-                    ConversationParticipant.user_id == user_id,
-                )
-                .limit(1)
+        statement = (
+            select(ConversationParticipant)
+            .where(
+                ConversationParticipant.conversation_id == conversation_id,
+                ConversationParticipant.user_id == user_id,
             )
+            .limit(1)
+        )
 
-            result = await session.execute(statement)
-            participant = result.scalars().first()
+        result = await session.execute(statement)
+        participant = result.scalars().first()
 
-            if participant:
-                participant.last_read_message_id = last_read_message_id
-                participant.last_read_at = datetime.now(timezone.utc)
-                session.add(participant)
+        if participant:
+            participant.last_read_message_id = last_read_message_id
+            participant.last_read_at = datetime.now(timezone.utc)
+            session.add(participant)
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -101,83 +96,77 @@ async def get_user_conversations_with_last_message_and_unread_count(
     db: AsyncSession, user_id
 ):
     try:
-        async with db.begin():
-            participants_statement = select(ConversationParticipant).where(
-                ConversationParticipant.user_id == user_id
+        participants_statement = select(ConversationParticipant).where(
+            ConversationParticipant.user_id == user_id
+        )
+        participants_response = await db.execute(participants_statement)
+        participants = participants_response.scalars().all()
+
+        result = []
+        for participant in participants:
+            conversation_statement = select(Conversation).where(
+                Conversation.conversation_id == participant.conversation_id
             )
-            participants_response = await db.execute(participants_statement)
-            participants = participants_response.scalars().all()
+            conversation_response = await db.execute(conversation_statement)
+            conversation = conversation_response.scalars().first()
+            if conversation is None:
+                continue
 
-            result = []
-            for participant in participants:
-                conversation_statement = select(Conversation).where(
-                    Conversation.conversation_id == participant.conversation_id
-                )
-                conversation_response = await db.execute(
-                    conversation_statement
-                )
-                conversation = conversation_response.scalars().first()
-                if conversation is None:
-                    continue
+            last_message_statement = (
+                select(Message)
+                .where(Message.conversation_id == conversation.conversation_id)
+                .order_by(Message.sent_at.desc())
+                .limit(1)
+            )
+            last_message_response = await db.execute(last_message_statement)
+            last_message = last_message_response.scalars().first()
 
-                last_message_statement = (
-                    select(Message)
+            count_filters = [
+                Message.conversation_id == conversation.conversation_id,
+                Message.sender_id != user_id,
+            ]
+            if participant.last_read_at is not None:
+                count_filters.append(
+                    Message.sent_at > participant.last_read_at
+                )
+
+            count_statement = (
+                select(func.count()).select_from(Message).where(*count_filters)
+            )
+            count_response = await db.execute(count_statement)
+            count_message = count_response.scalar_one_or_none() or 0
+
+            other_participant_id = None
+            if conversation.is_group:
+                other_participant_id = None
+            else:
+                # for 1-to-1 conversation, find the other user
+                other_statement = (
+                    select(ConversationParticipant)
                     .where(
-                        Message.conversation_id == conversation.conversation_id
+                        ConversationParticipant.conversation_id
+                        == conversation.conversation_id,
+                        ConversationParticipant.user_id != user_id,
                     )
-                    .order_by(Message.sent_at.desc())
                     .limit(1)
                 )
-                last_message_response = await db.execute(
-                    last_message_statement
-                )
-                last_message = last_message_response.scalars().first()
+                other_response = await db.execute(other_statement)
+                other = other_response.scalars().first()
 
-                count_statement = (
-                    select(func.count())
-                    .select_from(Message)
-                    .where(
-                        Message.conversation_id
-                        == conversation.conversation_id,
-                        Message.sender_id != user_id,
-                        Message.sent_at > participant.last_read_at,
-                    )
-                )
-                count_response = await db.execute(count_statement)
-                if len(count_response) > 0:
-                    count_message = count_response.scalar_one()
+                if other:
+                    other_participant_id = other.user_id
 
-                other_participant_id = None
-                if conversation.is_group:
-                    other_participant_id = None
-                else:
-                    # for 1-to-1 conversation, find the other user
-                    other_statement = (
-                        select(ConversationParticipant)
-                        .where(
-                            ConversationParticipant.conversation_id
-                            == conversation.conversation_id,
-                            ConversationParticipant.user_id != user_id,
-                        )
-                        .limit(1)
-                    )
-                    other_response = await db.execute(other_statement)
-                    other = other_response.scalars().first()
+            result.append(
+                {
+                    "conversation": conversation,
+                    "last_message": last_message,
+                    "unread_count": count_message,
+                    "user_id": user_id,
+                    "other_user_id": other_participant_id,
+                }
+            )
 
-                    if other:
-                        other_participant_id = other.user_id
-
-                result.append(
-                    {
-                        "conversation": conversation,
-                        "last_message": last_message,
-                        "unread_count": count_message,
-                        "user_id": user_id,
-                        "other_user_id": other_participant_id,
-                    }
-                )
-
-            return result
+        return result
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err

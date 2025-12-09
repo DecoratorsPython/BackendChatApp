@@ -1,6 +1,7 @@
 import asyncio
+from contextlib import suppress
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 
 
 class ConnectionManager:
@@ -20,9 +21,10 @@ class ConnectionManager:
             if websocket in self._connections:
                 self._connections.remove(websocket)
 
-        await websocket.close()
+        with suppress(RuntimeError, WebSocketDisconnect):
+            await websocket.close()
 
-    async def send_personal_message(self, message: dict, user_id: str) -> None:
+    async def send_personal_message(self, message: dict, user_id: str) -> bool:
         target = None
 
         async with self._lock:
@@ -31,11 +33,14 @@ class ConnectionManager:
                     target = websocket
                     break
 
+        if target is None:
+            return False
+
         try:
             await target.send_json(message)
-        except Exception:
-            async with self._lock:
-                if target in self._connections:
-                    self._connections.remove(target)
+            return True
+        except (RuntimeError, WebSocketDisconnect):
+            with suppress(Exception):
+                await self.disconnect(target)
 
-            await target.close()
+            return False
