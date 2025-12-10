@@ -44,6 +44,7 @@ def get_my_conversations(
                 created_at=conv.created_at.isoformat(),
                 last_message=MessageOut(
                     message_id=str(last_msg.message_id),
+                    sender_id=str(last_msg.sender_id),
                     content=last_msg.content,
                     sent_at=last_msg.sent_at.isoformat(),
                 ) if last_msg else None,
