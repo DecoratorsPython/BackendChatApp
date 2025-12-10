@@ -46,14 +46,12 @@ class AuthService:
                 .one_or_none()
             )
         except SQLAlchemyError as db_err:
-            print(f"Database error during user lookup: {db_err}")
             raise Exception("Database error during user lookup") from db_err
 
         if not user and email:
             try:
                 user = self.db.query(User).filter(User.email == email).one_or_none()
             except SQLAlchemyError as db_err:
-                print(f"Database error during email lookup: {db_err}")
                 raise Exception("Database error during email lookup") from db_err
 
         if user:
@@ -77,7 +75,6 @@ class AuthService:
                     self.db.refresh(user)
             except SQLAlchemyError as db_err:
                 self.db.rollback()
-                print(f"Database error during user update: {db_err}")
                 raise Exception(
                     "Database error during user update"
                 ) from db_err
@@ -97,7 +94,6 @@ class AuthService:
                 self.db.refresh(user)
             except SQLAlchemyError as db_err:
                 self.db.rollback()
-                print(f"Database error during user creation: {db_err}")
                 raise Exception("Database error during user creation") from db_err
 
         return user
