@@ -216,3 +216,30 @@ async def list_my_friends(
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
+
+@router.delete(
+    "/{other_user_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_friendship(
+    other_user_id: UUID,
+    db: AsyncSession = get_db_dependency,
+    current_user: User = current_user_dependency,
+):
+   
+    me_id: UUID = current_user.user_id
+
+    try:
+        async with db.begin():
+            deleted = await repo.delete_friendship_between(db, me_id, other_user_id)
+
+            if not deleted:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Friendship does not exist.",
+                )
+
+            return {"detail": "Friendship deleted."}
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err

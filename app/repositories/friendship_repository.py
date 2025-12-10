@@ -296,3 +296,34 @@ async def is_friend(user_a: UUID, user_b: UUID) -> bool:
 
         except SQLAlchemyError as err:
             raise RuntimeError("Database error occurred") from err
+        
+async def delete_friendship_between(
+    session: AsyncSession, user_id_1: UUID, user_id_2: UUID
+) -> bool:
+    try:
+        stmt = (
+            select(Friendship)
+            .where(
+                or_(
+                    (Friendship.user_id_1 == user_id_1)
+                    & (Friendship.user_id_2 == user_id_2),
+                    (Friendship.user_id_1 == user_id_2)
+                    & (Friendship.user_id_2 == user_id_1),
+                )
+            )
+            .limit(1)
+        )
+
+        result = await session.execute(stmt)
+        friendship = result.scalars().first()
+
+        if not friendship:
+            return False
+
+        await session.delete(friendship)
+        await session.flush()
+        return True
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
