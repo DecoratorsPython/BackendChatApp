@@ -1,3 +1,5 @@
+# app/api/src/friendships.py
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -58,7 +60,7 @@ async def send_friend_request_by_email(
                     detail="You cannot send a friend request to yourself.",
                 )
 
-            # 3. Check if friendship already exists
+            # 3. Check if friendship already exists (in any direction)
             existing = await repo.get_friendship(db, me_id, target_id)
             if existing:
                 raise HTTPException(
@@ -86,12 +88,32 @@ async def list_incoming_requests(
     db: AsyncSession = get_db_dependency,
     current_user: User = current_user_dependency,
 ):
+   
     me_id: UUID = current_user.user_id
 
     try:
         async with db.begin():
-            requests = await repo.list_pending_for_user(db, me_id)
+            requests = await repo.list_incoming_for_user(db, me_id)
+            return requests
 
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
+
+@router.get(
+    "/requests/sent",
+    response_model=list[FriendshipResponse],
+)
+async def list_sent_requests(
+    db: AsyncSession = get_db_dependency,
+    current_user: User = current_user_dependency,
+):
+    
+    me_id: UUID = current_user.user_id
+
+    try:
+        async with db.begin():
+            requests = await repo.list_sent_for_user(db, me_id)
             return requests
 
     except SQLAlchemyError as err:
