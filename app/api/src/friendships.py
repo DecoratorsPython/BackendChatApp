@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.services.suggest_friend_service import suggest_friends_for_user
 from app.db.deps import get_db
 from app.core.deps import get_current_user
 from app.db.models.user import User
@@ -133,3 +134,15 @@ def reject_friend_request(
     # TODO: notify sender that the request was rejected.
 
     return {"detail": "Friend request rejected."}
+
+
+@router.get("/suggestions")
+def suggest_friends(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    suggestions = suggest_friends_for_user(db, str(current_user.user_id))
+    return [{
+            "user_id": u.user_id,
+            "username": u.username,
+            "email": u.email,
+            "avatar_url": u.avatar_url
+        }for u in suggestions
+    ]
