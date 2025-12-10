@@ -2,13 +2,15 @@
 # - upsert user (creates and updates the user);
 # - issue tokens
 # - refresh access
-from datetime import datetime
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime, timezone
 
-from app.db.models.user import User
-from app.core.security import create_access_token
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.auth.tokens import create_refresh_token
+from app.core.security import create_access_token
+from app.db.models.user import User
 
 
 def normalize_email(email: str | None) -> str | None:
@@ -18,11 +20,10 @@ def normalize_email(email: str | None) -> str | None:
 
 
 class AuthService:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-
-    def upsert_user_from_google_profile(self, profile: dict) -> User:
+    async def upsert_user_from_google_profile(self, profile: dict) -> User:
         provider = "google"
         try:
             provider_sub = profile["sub"]
@@ -34,25 +35,33 @@ class AuthService:
         username = profile.get("name")
         avatar_url = profile.get("picture")
 
-
         if not username:
             raise ValueError("Google profile missing 'name' field")
 
         user = None
         try:
-            user = (
-                self.db.query(User)
-                .filter(User.provider == provider, User.provider_sub == provider_sub)
-                .one_or_none()
+            statement = (
+                select(User)
+                .where(
+                    User.provider == provider,
+                    User.provider_sub == provider_sub,
+                )
+                .limit(1)
             )
+            result = await self.db.execute(statement)
+            user = result.scalars().one_or_none()
         except SQLAlchemyError as db_err:
             raise Exception("Database error during user lookup") from db_err
 
         if not user and email:
             try:
-                user = self.db.query(User).filter(User.email == email).one_or_none()
+                statement = select(User).where(User.email == email).limit(1)
+                result = await self.db.execute(statement)
+                user = result.scalars().one_or_none()
             except SQLAlchemyError as db_err:
-                raise Exception("Database error during email lookup") from db_err
+                raise Exception(
+                    "Database error during email lookup"
+                ) from db_err
 
         if user:
             changed = False
@@ -63,18 +72,20 @@ class AuthService:
                 if avatar_url and user.avatar_url != avatar_url:
                     user.avatar_url = avatar_url
                     changed = True
-                if user.provider != provider or user.provider_sub != provider_sub:
+                if (
+                    user.provider != provider
+                    or user.provider_sub != provider_sub
+                ):
                     user.provider = provider
                     user.provider_sub = provider_sub
                     changed = True
-                user.last_login = datetime.utcnow()
+                user.last_login = datetime.now(timezone.utc)
                 changed = True
                 if changed:
                     self.db.add(user)
-                    self.db.commit()
-                    self.db.refresh(user)
+                    await self.db.flush()
+                    await self.db.refresh(user)
             except SQLAlchemyError as db_err:
-                self.db.rollback()
                 raise Exception(
                     "Database error during user update"
                 ) from db_err
@@ -86,24 +97,24 @@ class AuthService:
                     avatar_url=avatar_url,
                     provider=provider,
                     provider_sub=provider_sub,
-                    created_at=datetime.utcnow(),
-                    last_login=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
+                    last_login=datetime.now(timezone.utc),
                 )
                 self.db.add(user)
-                self.db.commit()
-                self.db.refresh(user)
+                await self.db.flush()
+                await self.db.refresh(user)
             except SQLAlchemyError as db_err:
-                self.db.rollback()
-                raise Exception("Database error during user creation") from db_err
+                raise Exception(
+                    "Database error during user creation"
+                ) from db_err
 
         return user
 
-
-    def issue_tokens_for_user(self, user: User) -> dict:
+    async def issue_tokens_for_user(self, user: User) -> dict:
         user_id = str(user.user_id)
         try:
             access = create_access_token(user_id)
-            refresh = create_refresh_token(self.db, user_id)
+            refresh = await create_refresh_token(self.db, user_id)
         except Exception as err:
             raise RuntimeError(
                 f"Failed to issue tokens for user: {err}"

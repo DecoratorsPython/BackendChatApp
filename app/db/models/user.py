@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 import uuid
-from datetime import datetime
-from sqlalchemy import Column, String, DateTime, UniqueConstraint, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, TEXT
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import TEXT, UUID
 from sqlalchemy.orm import relationship
+
 from app.db.base import Base
 
 
@@ -18,15 +21,21 @@ class User(Base):
     avatar_url = Column(TEXT, nullable=True)
 
     # OAuth
-    provider = Column(String(50), nullable=False)      # 'google'
-    provider_sub = Column(String(255), nullable=False) # sub from Google
+    provider = Column(String(50), nullable=False)  # 'google'
+    provider_sub = Column(String(255), nullable=False)  # sub from Google
 
     # meta
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    last_login = Column(DateTime, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    last_login = Column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
-        UniqueConstraint("provider", "provider_sub", name="uq_provider_identity"),
+        UniqueConstraint(
+            "provider", "provider_sub", name="uq_provider_identity"
+        ),
     )
 
 
@@ -44,9 +53,15 @@ class Friendship(Base):
         primary_key=True,
     )
 
-    status = Column(String(20), nullable=False)  # 'pending' | 'accepted' | 'blocked'
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    accepted_at = Column(DateTime, nullable=True)
+    status = Column(
+        String(20), nullable=False
+    )  # 'pending' | 'accepted' | 'blocked'
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class RefreshToken(Base):
@@ -69,19 +84,19 @@ class RefreshToken(Base):
     )
 
     created_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(timezone.utc),
     )
 
     expires_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
     )
 
     # if not null → user or server has revoked that token
     revoked_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=True,
     )
 
