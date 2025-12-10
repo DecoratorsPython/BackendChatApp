@@ -11,6 +11,7 @@ from app.repositories import friendship_repository as repo
 from app.repositories.user_repository import get_user_by_email
 from app.schemas.friend_request import FriendRequestByEmail
 from app.schemas.friendship_response import FriendshipResponse
+from app.services.suggest_friend_service import suggest_friends_for_user
 
 router = APIRouter(prefix="/friends", tags=["friends"])
 
@@ -28,9 +29,6 @@ async def send_friend_request_by_email(
     db: AsyncSession = get_db_dependency,
     current_user: User = current_user_dependency,
 ):
-    """
-    Send a friend request to a user by email.
-    """
     me_id: UUID = current_user.user_id
     me_email: str | None = current_user.email
 
@@ -88,9 +86,6 @@ async def list_incoming_requests(
     db: AsyncSession = get_db_dependency,
     current_user: User = current_user_dependency,
 ):
-    """
-    List all pending friend requests for the current user.
-    """
     me_id: UUID = current_user.user_id
 
     try:
@@ -112,9 +107,6 @@ async def accept_friend_request(
     db: AsyncSession = get_db_dependency,
     current_user: User = current_user_dependency,
 ):
-    """
-    Accept a pending friend request between current_user and other_user_id.
-    """
     me_id: UUID = current_user.user_id
 
     try:
@@ -148,9 +140,6 @@ async def reject_friend_request(
     db: AsyncSession = get_db_dependency,
     current_user: User = current_user_dependency,
 ):
-    """
-    Reject a pending friend request (delete the row).
-    """
     me_id: UUID = current_user.user_id
 
     try:
@@ -170,6 +159,30 @@ async def reject_friend_request(
             # TODO: notify sender that the request was rejected.
 
             return {"detail": "Friend request rejected."}
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
+
+@router.get("/suggestions")
+async def suggest_friends(
+    current_user: User = current_user_dependency,
+    db: AsyncSession = get_db_dependency,
+):
+    try:
+        async with db.begin():
+            suggestions = await suggest_friends_for_user(
+                db, str(current_user.user_id)
+            )
+            return [
+                {
+                    "user_id": u.user_id,
+                    "username": u.username,
+                    "email": u.email,
+                    "avatar_url": u.avatar_url,
+                }
+                for u in suggestions
+            ]
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err

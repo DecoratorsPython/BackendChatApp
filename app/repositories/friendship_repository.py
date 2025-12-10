@@ -22,9 +22,6 @@ def _normalize_pair(user_id_1: UUID, user_id_2: UUID) -> tuple[UUID, UUID]:
 async def get_friendship(
     session: AsyncSession, user_id_1: UUID, user_id_2: UUID
 ) -> Friendship | None:
-    """
-    Get friendship row between two users, regardless of order.
-    """
     a, b = _normalize_pair(user_id_1, user_id_2)
     try:
         statement = (
@@ -48,9 +45,6 @@ async def get_friendship(
 async def create_friend_request(
     session: AsyncSession, from_id: UUID, to_id: UUID
 ) -> Friendship:
-    """
-    Create a new 'pending' friendship between two users.
-    """
     a, b = _normalize_pair(from_id, to_id)
     try:
         friendship = Friendship(
@@ -73,9 +67,6 @@ async def create_friend_request(
 async def get_pending_between(
     session: AsyncSession, user_id_1: UUID, user_id_2: UUID
 ) -> Friendship | None:
-    """
-    Get a 'pending' friendship between two users, if any.
-    """
     a, b = _normalize_pair(user_id_1, user_id_2)
     try:
         statement = (

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     access_token_ttl_seconds: int = 600
     refresh_token_ttl_days: int = 30
 
+    # Frontend
     frontend_root_url: str
 
     class Config:
