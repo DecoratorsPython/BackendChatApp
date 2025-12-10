@@ -31,6 +31,9 @@ class ConnectionManager:
                     target = websocket
                     break
 
+        if target is None:
+            return
+
         try:
             await target.send_json(message)
         except Exception:
