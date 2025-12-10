@@ -1,5 +1,4 @@
 from alembic import op
-import sqlalchemy as sa
 
 from app.db.base import Base
 
@@ -11,7 +10,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    bind = op.get_bind()         
+    bind = op.get_bind()
     Base.metadata.create_all(bind=bind)
 
 

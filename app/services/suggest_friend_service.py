@@ -1,17 +1,23 @@
 import uuid
-from sqlalchemy.orm import Session
-from app.db.models.user import User, Friendship
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.models.user import Friendship, User
 
 
-def suggest_friends_for_user(db: Session, user_id):
+async def suggest_friends_for_user(db: AsyncSession, user_id):
     if isinstance(user_id, str):
         user_id = uuid.UUID(user_id)
 
     # Get all accepted friends (bidirectional)
-    direct_friends = db.query(Friendship).filter(
-        ((Friendship.user_id_1 == user_id) | (Friendship.user_id_2 == user_id)) &
-        (Friendship.status == "accepted")
-    ).all()
+    statement = select(Friendship).where(
+        ((Friendship.user_id_1 == user_id) | (Friendship.user_id_2 == user_id))
+        & (Friendship.status == "accepted")
+    )
+    response = await db.execute(statement)
+    direct_friends = response.scalars().all()
+
     friend_ids = set()
     for f in direct_friends:
         if f.user_id_1 == user_id:
@@ -20,11 +26,14 @@ def suggest_friends_for_user(db: Session, user_id):
             friend_ids.add(f.user_id_1)
 
     # Get all users with pending requests (sent or received)
+    statement = select(Friendship).where(
+        ((Friendship.user_id_1 == user_id) | (Friendship.user_id_2 == user_id))
+        & (Friendship.status == "pending")
+    )
+    result = await db.execute(statement)
+    pendings = result.scalars().all()
+
     pending_ids = set()
-    pendings = db.query(Friendship).filter(
-        ((Friendship.user_id_1 == user_id) | (Friendship.user_id_2 == user_id)) &
-        (Friendship.status == "pending")
-    ).all()
     for p in pendings:
         if p.user_id_1 == user_id:
             pending_ids.add(p.user_id_2)
@@ -35,15 +44,20 @@ def suggest_friends_for_user(db: Session, user_id):
     fof_ids = set()
     for fid in friend_ids:
         # Friends where fid is user_id_1
-        f1 = db.query(Friendship).filter(
+        statement = select(Friendship).where(
             (Friendship.user_id_1 == fid) & (Friendship.status == "accepted")
-        ).all()
+        )
+        result = await db.execute(statement)
+        f1 = result.scalars().all()
         for f in f1:
             fof_ids.add(f.user_id_2)
+
         # Friends where fid is user_id_2
-        f2 = db.query(Friendship).filter(
+        statement = select(Friendship).where(
             (Friendship.user_id_2 == fid) & (Friendship.status == "accepted")
-        ).all()
+        )
+        result = await db.execute(statement)
+        f2 = result.scalars().all()
         for f in f2:
             fof_ids.add(f.user_id_1)
 
@@ -55,5 +69,7 @@ def suggest_friends_for_user(db: Session, user_id):
     if not fof_ids:
         return []
 
-    suggestions = db.query(User).filter(User.user_id.in_(fof_ids)).all()
+    statement = select(User).where(User.user_id.in_(fof_ids))
+    result = await db.execute(statement)
+    suggestions = result.scalars().all()
     return suggestions

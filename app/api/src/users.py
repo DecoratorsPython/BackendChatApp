@@ -6,9 +6,11 @@ from app.db.models.user import User
 
 router = APIRouter(tags=["users"])
 
+get_db_dependency = Depends(get_current_user)
+
 
 @router.get("/users/me")
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: User = get_db_dependency):
     return {
         "user_id": str(current_user.user_id),
         "username": current_user.username,
