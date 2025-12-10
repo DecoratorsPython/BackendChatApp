@@ -1,1 +1,0 @@
-# Endpoints related to message operations

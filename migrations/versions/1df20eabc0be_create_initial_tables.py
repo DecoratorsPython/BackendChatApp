@@ -2,8 +2,7 @@ from alembic import op
 
 from app.db.base import Base
 
-# revision identifiers, used by Alembic.
-revision = "9edb02db3d3c"
+revision: str = "1df20eabc0be"
 down_revision = None
 branch_labels = None
 depends_on = None
