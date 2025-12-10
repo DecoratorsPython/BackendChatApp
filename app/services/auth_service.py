@@ -52,7 +52,6 @@ class AuthService:
             try:
                 user = self.db.query(User).filter(User.email == email).one_or_none()
             except SQLAlchemyError as db_err:
-
                 raise Exception("Database error during email lookup") from db_err
 
         if user:

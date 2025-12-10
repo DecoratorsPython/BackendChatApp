@@ -7,6 +7,7 @@ from app.api.src.users import router as users_router
 from app.core.config import settings
 from app.ws.chat import router as ws_router
 from app.api.src import friendships
+from app.api.src.conversations import router as conversations_router
 
 
 
@@ -30,6 +31,6 @@ app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(ws_router)
-
 app.include_router(friendships.router)
+app.include_router(conversations_router)
 
