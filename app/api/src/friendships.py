@@ -72,7 +72,6 @@ async def send_friend_request_by_email(
             # 4. Create new pending request (DB logic in repo)
             friendship = await repo.create_friend_request(db, me_id, target_id)
 
-            # TODO: send real-time notification via WebSocket.
 
             return friendship
 
@@ -145,7 +144,6 @@ async def accept_friend_request(
 
             friendship = await repo.accept_request(db, friendship)
 
-            # TODO: notify both users via WebSocket.
 
             return friendship
 
@@ -178,7 +176,6 @@ async def reject_friend_request(
 
             await repo.delete_request(db, friendship)
 
-            # TODO: notify sender that the request was rejected.
 
             return {"detail": "Friend request rejected."}
 
@@ -204,6 +201,31 @@ async def suggest_friends(
                     "avatar_url": u.avatar_url,
                 }
                 for u in suggestions
+            ]
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
+@router.get("")
+async def list_my_friends(
+    current_user: User = current_user_dependency,
+    db: AsyncSession = get_db_dependency,
+):
+    
+    me_id: UUID = current_user.user_id
+
+    try:
+        async with db.begin():
+            friends = await repo.list_friends_for_user(db, me_id)
+
+            return [
+                {
+                    "user_id": u.user_id,
+                    "username": u.username,
+                    "email": u.email,
+                    "avatar_url": u.avatar_url,
+                }
+                for u in friends
             ]
 
     except SQLAlchemyError as err:

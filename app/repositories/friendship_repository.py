@@ -2,13 +2,14 @@
 
 from datetime import datetime, timezone
 from uuid import UUID
+from sqlalchemy import or_
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.user import Friendship
+from app.db.models.user import Friendship, User
 from app.db.session import SessionLocal
 
 
@@ -177,6 +178,45 @@ async def delete_request(
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
+
+async def list_friends_for_user(
+    session: AsyncSession, user_id: UUID
+) -> list[User]:
+   
+    try:
+        friendship_stmt = select(Friendship).where(
+            Friendship.status == "accepted",
+            or_(
+                Friendship.user_id_1 == user_id,
+                Friendship.user_id_2 == user_id,
+            ),
+        )
+
+        result = await session.execute(friendship_stmt)
+        friendships: list[Friendship] = result.scalars().all()
+
+        if not friendships:
+            return []
+
+        friend_ids: set[UUID] = set()
+        for fr in friendships:
+            if fr.user_id_1 == user_id:
+                friend_ids.add(fr.user_id_2)
+            else:
+                friend_ids.add(fr.user_id_1)
+
+        if not friend_ids:
+            return []
+
+        users_stmt = select(User).where(User.user_id.in_(friend_ids))
+        users_result = await session.execute(users_stmt)
+        users = users_result.scalars().all()
+
+        return users
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
 
 
 
