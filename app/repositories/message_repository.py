@@ -1,10 +1,33 @@
+import uuid
+
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import SessionLocal
 
 from app.db.models.message import Message, MessageReceipt
+
+
+async def get_message_history(
+    conv_uuid: str
+):
+    async with SessionLocal() as session:
+        try:
+            async with session.begin():
+                statement = (
+                        select(Message)
+                        .where(Message.conversation_id == conv_uuid)
+                        .order_by(Message.sent_at.asc())
+                    )
+                result = await session.execute(statement)
+                messages = result.scalars().all()
+
+                return messages
+
+        except SQLAlchemyError as err:
+            raise RuntimeError("Database error occurred") from err
 
 
 async def create_message(
@@ -68,7 +91,6 @@ async def mark_messages_seen(
                 MessageReceipt.seen_at.is_(None),
             )
             .values(seen_at=datetime.now(timezone.utc))
-            .execution_options(synchronize_session=False)
         )
 
         await session.execute(recipient_statement)
@@ -80,7 +102,6 @@ async def mark_messages_seen(
                 Message.read_at.is_(None),
             )
             .values(read_at=datetime.now(timezone.utc))
-            .execution_options(synchronize_session=False)
         )
 
         await session.execute(sender_statement)
