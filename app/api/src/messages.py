@@ -1,6 +1,5 @@
 import uuid
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +9,7 @@ from app.db.models.message import Message
 from app.schemas.message_out import MessageOut
 from app.db.models.user import User
 from app.services.chat_service import mark_conversation_read
+
 
 router = APIRouter()
 
@@ -53,3 +53,35 @@ async def get_messages_for_conversation(
 
     except SQLAlchemyError:
         return []
+
+
+@router.delete("/messages/{message_id}", status_code=status.HTTP_200_OK)
+async def delete_message(
+    message_id: str,
+    db: AsyncSession = get_db_dependency,
+    current_user: User = current_user_dependency,
+):
+    try:
+        msg_uuid = uuid.UUID(message_id)
+    except Exception as err:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid message ID"
+        )from err
+
+    try:
+        result = await db.execute(
+            select(Message).where(Message.message_id == msg_uuid)
+        )
+        message = result.scalar_one_or_none()
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        await db.delete(message)
+        await db.commit()
+        return {"detail": "Message deleted"}
+    except SQLAlchemyError as err:
+        raise HTTPException(
+            status_code=500,
+            detail="Database error"
+        )from err
