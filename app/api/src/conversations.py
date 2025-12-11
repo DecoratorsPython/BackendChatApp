@@ -15,17 +15,16 @@ from app.repositories.conversation_repository import (
 from app.schemas.conversation_out import ConversationOut
 from app.schemas.message_out import MessageOut
 from app.services.chat_service import (
-    mark_conversation_read,
     verify_one_to_one_conversation,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/conversations")
 
 get_db_dependency = Depends(get_db)
 current_user_dependency = Depends(get_current_user)
 
 
-@router.get("/conversations/exists")
+@router.get("/exists/{other_user_id}")
 async def check_one_to_one_conversation_exists(
     other_user_id: str,
     db: AsyncSession = get_db_dependency,
@@ -43,7 +42,7 @@ async def check_one_to_one_conversation_exists(
         raise RuntimeError("Database error occurred") from err
 
 
-@router.post("conversations/create")
+@router.post("/create/{other_user_id}")
 async def create_one_to_one_conversation(
     other_user_id: str,
     db: AsyncSession = get_db_dependency,
@@ -61,7 +60,7 @@ async def create_one_to_one_conversation(
         raise RuntimeError("Database error occurred") from err
 
 
-@router.get("/conversations/receive")
+@router.get("/receive/{other_user_id}")
 async def obtain_one_to_one_conversation(
     other_user_id: str,
     db: AsyncSession = get_db_dependency,
@@ -79,7 +78,7 @@ async def obtain_one_to_one_conversation(
         raise RuntimeError("Database error occurred") from err
 
 
-@router.get("/conversations/me", response_model=list[ConversationOut])
+@router.get("/me", response_model=list[ConversationOut])
 async def get_my_conversations(
     db: AsyncSession = get_db_dependency,
     current_user: User = current_user_dependency,
@@ -150,45 +149,6 @@ async def get_my_conversations(
                 )
 
             return result
-
-    except SQLAlchemyError as err:
-        raise RuntimeError("Database error occurred") from err
-
-
-@router.get(
-    "/conversations/{conversation_id}/messages",
-    response_model=list[MessageOut],
-)
-async def get_conversation_messages(
-    conversation_id: str,
-    db: AsyncSession = get_db_dependency,
-    current_user: User = current_user_dependency,
-):
-    try:
-        async with db.begin():
-            await mark_conversation_read(
-                db, conversation_id, current_user.user_id
-            )
-
-            statement = (
-                select(Message)
-                .where(Message.conversation_id == conversation_id)
-                .order_by(Message.sent_at.asc())
-            )
-            result = await db.execute(statement)
-            messages = result.scalars().all()
-
-            if not messages:
-                return []
-
-            return [
-                MessageOut(
-                    message_id=str(msg.message_id),
-                    content=msg.content,
-                    sent_at=msg.sent_at.isoformat(),
-                )
-                for msg in messages
-            ]
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
