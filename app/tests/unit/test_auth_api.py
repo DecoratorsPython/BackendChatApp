@@ -11,8 +11,10 @@ def client():
     with TestClient(app) as c:
         yield c
 
+
+@pytest.mark.asyncio
 @patch("app.services.auth_service.AuthService.upsert_user_from_google_profile")
-def test_google_login_upserts_user(mock_upsert, client):
+async def test_google_login_upserts_user(mock_upsert, client):
     mock_user = MagicMock()
     mock_user.email = "testuser@example.com"
     mock_user.username = "Test User"
@@ -23,10 +25,10 @@ def test_google_login_upserts_user(mock_upsert, client):
         "sub": "testsub",
         "email": "testuser@example.com",
         "name": "Test User",
-        "picture": "http://example.com/avatar.png"
+        "picture": "http://example.com/avatar.png"      
     }
     auth_service = AuthService(MagicMock())
-    user = auth_service.upsert_user_from_google_profile(payload)
+    user = await auth_service.upsert_user_from_google_profile(payload)
     assert user.email == "testuser@example.com"
     assert user.username == "Test User"
     assert user.provider == "google"

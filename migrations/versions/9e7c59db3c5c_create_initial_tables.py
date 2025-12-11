@@ -2,8 +2,12 @@ from alembic import op
 
 from app.db.base import Base
 
-# revision identifiers, used by Alembic.
-revision = "9edb02db3d3c"
+from app.db.models.user import User
+from app.db.models.message import Message
+from app.db.models.conversation import Conversation  
+
+
+revision: str = '9e7c59db3c5c'
 down_revision = None
 branch_labels = None
 depends_on = None
