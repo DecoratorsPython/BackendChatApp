@@ -10,7 +10,7 @@ from app.db.models.message import Message
 
 async def get_one_to_one_conversation(
     session: AsyncSession, user_a: str, user_b: str
-) -> Conversation | None:
+) -> str | None:
     try:
         sub = (
             select(ConversationParticipant.conversation_id)
@@ -27,7 +27,7 @@ async def get_one_to_one_conversation(
         result = await session.execute(query)
         conversation = result.scalars().first()
 
-        return conversation
+        return conversation.conversation_id if conversation else None
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -35,7 +35,7 @@ async def get_one_to_one_conversation(
 
 async def create_conversation_with_participants(
     session: AsyncSession, participants: list[str], is_group: bool = False
-) -> Conversation:
+) -> str:
     try:
         conversation = Conversation(
             is_group=is_group, created_at=datetime.now(timezone.utc)
@@ -58,7 +58,7 @@ async def create_conversation_with_participants(
         session.add_all(rows)
         await session.flush()
 
-        return conversation
+        return conversation.conversation_id
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err

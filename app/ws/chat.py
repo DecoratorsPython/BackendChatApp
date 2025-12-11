@@ -18,7 +18,7 @@ manager = ConnectionManager()
 
 
 @router.websocket("/chat")
-async def user_chat(websocket: WebSocket):
+async def user_chat(conversation_id: str, websocket: WebSocket):
     token = websocket.query_params.get("token")
 
     if not token:
@@ -53,6 +53,12 @@ async def user_chat(websocket: WebSocket):
                 await websocket.send_json({"error": "Missing target"})
                 continue
 
+            conversation_id = str(message.conversation_id)
+
+            if conversation_id is None:
+                await websocket.send_json({"error": "Missing conversation ID"})
+                continue
+
             try:
                 friends = await is_friend(sender_id, recipient_id)
             except Exception as err:
@@ -70,7 +76,7 @@ async def user_chat(websocket: WebSocket):
 
             try:
                 await persist_outgoing_message(
-                    sender_id, recipient_id, message.content, None
+                    sender_id, recipient_id, message.content, conversation_id
                 )
             except Exception as err:
                 await websocket.send_json(
