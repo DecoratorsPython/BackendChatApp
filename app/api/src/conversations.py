@@ -8,18 +8,77 @@ from app.db.deps import get_db
 from app.db.models.message import Message
 from app.db.models.user import User
 from app.repositories.conversation_repository import (
+    create_conversation_with_participants,
+    get_one_to_one_conversation,
     get_user_conversations_with_last_message_and_unread_count,
 )
 from app.schemas.conversation_out import ConversationOut
 from app.schemas.message_out import MessageOut
+from app.services.chat_service import (
+    verify_one_to_one_conversation,
+)
 
-router = APIRouter()
+router = APIRouter(prefix="/conversations")
 
 get_db_dependency = Depends(get_db)
 current_user_dependency = Depends(get_current_user)
 
 
-@router.get("/conversations/me", response_model=list[ConversationOut])
+@router.get("/exists/{other_user_id}")
+async def check_one_to_one_conversation_exists(
+    other_user_id: str,
+    db: AsyncSession = get_db_dependency,
+    current_user: User = current_user_dependency,
+):
+    try:
+        async with db.begin():
+            value = await verify_one_to_one_conversation(
+                db, current_user.user_id, other_user_id
+            )
+
+            return value
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
+
+@router.post("/create/{other_user_id}")
+async def create_one_to_one_conversation(
+    other_user_id: str,
+    db: AsyncSession = get_db_dependency,
+    current_user: User = current_user_dependency,
+):
+    try:
+        async with db.begin():
+            value = await create_conversation_with_participants(
+                db, [current_user.user_id, other_user_id], is_group=False
+            )
+
+            return value
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
+
+@router.get("/receive/{other_user_id}")
+async def obtain_one_to_one_conversation(
+    other_user_id: str,
+    db: AsyncSession = get_db_dependency,
+    current_user: User = current_user_dependency,
+):
+    try:
+        async with db.begin():
+            value = await get_one_to_one_conversation(
+                db, current_user.user_id, other_user_id
+            )
+
+            return value
+
+    except SQLAlchemyError as err:
+        raise RuntimeError("Database error occurred") from err
+
+
+@router.get("/me", response_model=list[ConversationOut])
 async def get_my_conversations(
     db: AsyncSession = get_db_dependency,
     current_user: User = current_user_dependency,
@@ -90,41 +149,6 @@ async def get_my_conversations(
                 )
 
             return result
-
-    except SQLAlchemyError as err:
-        raise RuntimeError("Database error occurred") from err
-
-
-@router.get(
-    "/conversations/{conversation_id}/messages",
-    response_model=list[MessageOut],
-)
-async def get_conversation_messages(
-    conversation_id: str,
-    db: AsyncSession = get_db_dependency,
-    current_user: User = current_user_dependency,
-):
-    try:
-        async with db.begin():
-            statement = (
-                select(Message)
-                .where(Message.conversation_id == conversation_id)
-                .order_by(Message.sent_at.asc())
-            )
-            result = await db.execute(statement)
-            messages = result.scalars().all()
-
-            if not messages:
-                return []
-
-            return [
-                MessageOut(
-                    message_id=str(msg.message_id),
-                    content=msg.content,
-                    sent_at=msg.sent_at.isoformat(),
-                )
-                for msg in messages
-            ]
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err

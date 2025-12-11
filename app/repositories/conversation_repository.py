@@ -7,11 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.conversation import Conversation, ConversationParticipant
 from app.db.models.message import Message
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 async def get_one_to_one_conversation(
     session: AsyncSession, user_a: str, user_b: str
-) -> Conversation | None:
+) -> str | None:
     try:
+        logging.info("[get_one_to_one_conversation] Querying for one-to-one conversation between users")
         sub = (
             select(ConversationParticipant.conversation_id)
             .where(ConversationParticipant.user_id.in_([user_a, user_b]))
@@ -20,14 +25,17 @@ async def get_one_to_one_conversation(
             .subquery()
         )
 
+        logging.info("[get_one_to_one_conversation] Executing main query to find conversation")
         query = select(Conversation).where(
             Conversation.conversation_id.in_(select(sub.c.conversation_id)),
             Conversation.is_group.is_(False),
         )
+        logging.info("[get_one_to_one_conversation] Fetching conversation result")
         result = await session.execute(query)
         conversation = result.scalars().first()
 
-        return conversation
+        logging.info(f"[get_one_to_one_conversation] Found conversation: {conversation}")
+        return conversation.conversation_id if conversation else None
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
@@ -35,14 +43,16 @@ async def get_one_to_one_conversation(
 
 async def create_conversation_with_participants(
     session: AsyncSession, participants: list[str], is_group: bool = False
-) -> Conversation:
+) -> str:
     try:
+        logging.info("[create_conversation_with_participants] Creating new conversation")
         conversation = Conversation(
             is_group=is_group, created_at=datetime.now(timezone.utc)
         )
         session.add(conversation)
         await session.flush()
 
+        logging.info("[create_conversation_with_participants] Adding participants to conversation") 
         rows = []
         for uid in participants:
             rows.append(
@@ -55,10 +65,12 @@ async def create_conversation_with_participants(
                 )
             )
 
+        logging.info("[create_conversation_with_participants] Committing participants to database")
         session.add_all(rows)
         await session.flush()
 
-        return conversation
+        logging.info(f"[create_conversation_with_participants] Created conversation with ID: {conversation.conversation_id}")
+        return conversation.conversation_id
 
     except SQLAlchemyError as err:
         raise RuntimeError("Database error occurred") from err
