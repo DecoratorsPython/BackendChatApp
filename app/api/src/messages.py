@@ -9,6 +9,7 @@ from app.db.models.message import Message
 from app.schemas.message_out import MessageOut
 from app.db.models.user import User
 from app.services.chat_service import mark_conversation_read
+from app.repositories.message_repository import get_message_history
 
 
 router = APIRouter()
@@ -24,22 +25,11 @@ async def get_messages_for_conversation(
     current_user: User = current_user_dependency,
 ):
     try:
-        conv_uuid = uuid.UUID(conversation_id)
-    except Exception:
-        return []
-
-    try:
         await mark_conversation_read(
-                db, conversation_id, current_user.user_id
+                conversation_id, current_user.user_id
             )
 
-        statement = (
-            select(Message)
-            .where(Message.conversation_id == conv_uuid)
-            .order_by(Message.sent_at.asc())
-        )
-        result = await db.execute(statement)
-        messages = result.scalars().all()
+        messages = await get_message_history(conversation_id)
 
         return [
             MessageOut(

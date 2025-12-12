@@ -4,14 +4,32 @@ services:
   postgres:
     image: postgres:16
     container_name: chat_db
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: chat_dev
-      POSTGRES_USER: chat_user
-      POSTGRES_PASSWORD: chat_pass
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend_app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
+      SECRET_KEY: ${session_secret_key}
+      FRONTEND_URL: ${frontend_root_url}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
 
 volumes:
   pgdata:

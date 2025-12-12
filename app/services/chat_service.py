@@ -39,7 +39,7 @@ async def persist_outgoing_message(
                     session, conversation_id, sender_id, content
                 )
                 recipient_ids = [recipient_id]
-
+                
                 await create_message_receipts(
                     session, message.message_id, recipient_ids
                 )
@@ -49,22 +49,24 @@ async def persist_outgoing_message(
 
 
 async def mark_conversation_read(
-    session: AsyncSession, conversation_id: str, user_id: str
+    conversation_id: str, user_id: str
 ) -> None:
-    try:
-        await mark_messages_seen(session, conversation_id, user_id)
+    async with SessionLocal() as session:
+        try:
+            async with session.begin():
+                await mark_messages_seen(session, conversation_id, user_id)
 
-        latest = await get_latest_message_in_conversation(
-            session, conversation_id
-        )
+                latest = await get_latest_message_in_conversation(
+                    session, conversation_id
+                )
 
-        if latest:
-            await update_participant_read(
-                session,
-                conversation_id,
-                user_id,
-                str(latest.message_id),
-            )
+                if latest:
+                    await update_participant_read(
+                        session,
+                        conversation_id,
+                        user_id,
+                        str(latest.message_id),
+                    )
 
-    except SQLAlchemyError as err:
-        raise RuntimeError("Database error occurred") from err
+        except SQLAlchemyError as err:
+            raise RuntimeError("Database error occurred") from err
