@@ -18,7 +18,8 @@ CHARLIE_ID = "33333333-3333-3333-3333-333333333333"
 
 
 class FakeTokenData:
-    def __init__(self, sub): self.sub = sub
+    def __init__(self, sub):
+        self.sub = sub
 
 
 def fake_verify_access_token(token: str):
@@ -39,7 +40,8 @@ def client():
         yield c
 
 
-def test_ws_connect_and_disconnect(client):
+@pytest.mark.asyncio
+async def test_ws_connect_and_disconnect(client):
     with client.websocket_connect("/chat?token=alice&conversation_id=convA") as ws:
         ws.send_json({
             "user_id": BOB_ID,
@@ -51,7 +53,8 @@ def test_ws_connect_and_disconnect(client):
         assert resp["status"] in ("sent", "stored")
 
 
-def test_ws_message_goes_only_to_matching_conversation(client):
+@pytest.mark.asyncio
+async def test_ws_message_goes_only_to_matching_conversation(client):
     with client.websocket_connect("/chat?token=bob&conversation_id=convA") as wsA:
         with client.websocket_connect("/chat?token=bob&conversation_id=convB") as wsB:
 
@@ -68,7 +71,8 @@ def test_ws_message_goes_only_to_matching_conversation(client):
                 wsB.receive_json(timeout=0.2)
 
 
-def test_ws_not_friends_rejected(client: TestClient):
+@pytest.mark.asyncio
+async def test_ws_not_friends_rejected(client):
     with client.websocket_connect("/chat?token=bob&conversation_id=convX") as ws:
         ws.send_json({
             "user_id": CHARLIE_ID,
@@ -80,11 +84,11 @@ def test_ws_not_friends_rejected(client: TestClient):
         assert resp["error"] == "Users are not friends"
 
 
-def test_ws_missing_token_rejected(client: TestClient):
+def test_ws_missing_token_rejected(client):
     with pytest.raises(WebSocketDisconnect):
         client.websocket_connect("/chat?conversation_id=convX")
 
 
-def test_ws_invalid_token_rejected(client: TestClient):
+def test_ws_invalid_token_rejected(client):
     with pytest.raises(WebSocketDisconnect):
         client.websocket_connect("/chat?token=bad&conversation_id=convX")
