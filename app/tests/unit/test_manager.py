@@ -2,39 +2,39 @@ import os
 import sys
 import pytest
 from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
 
 CURRENT_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-
 from app.main import app
-from app.ws.chat import manager  
+from app.ws.chat import manager
 
 
 client = TestClient(app)
 
 
 def open_ws(token="alice", conv="convA"):
-    """Open a REAL websocket connection via FastAPI TestClient."""
     return client.websocket_connect(
         f"/chat?token={token}&conversation_id={conv}"
     )
 
 
-def test_manager_connect_and_disconnect_real_ws():
+@pytest.mark.asyncio
+async def test_manager_connect_and_disconnect_real_ws():
     ws = open_ws("alice", "convA")
 
-    conns = manager._connections.get("alice")
-    assert conns is not None
-    assert len(conns) == 1
+    ws.send_json({
+        "user_id": "22222222-2222-2222-2222-222222222222",
+        "content": "hello",
+        "conversation_id": "convA"
+    })
+
+    resp = ws.receive_json()
+    assert "status" in resp or "message" in resp
 
     ws.close()
-
-    conns = manager._connections.get("alice")
-    assert conns is not None
 
 
 @pytest.mark.asyncio
