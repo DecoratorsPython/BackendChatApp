@@ -37,15 +37,15 @@ messages using a modern, scalable architecture.
 ------------------------------------------------------------------------
 
 ## 🛠️ Technologies Used
+| Category                | Technologies                     |
+|-------------------------|----------------------------------|
+| **Language**            | Python                           |
+| **Framework**           | FastAPI                          |
+| **Real-Time Transport** | WebSockets                       |
+| **Database**            | PostgreSQL                       |
+| **Authentication**      | Google OAuth 2.0, JWT            |
+| **Containerization**    | Docker & Docker Compose          |
 
-  Category                  Technologies
-  ------------------------- -------------------------
-  **Language**              Python
-  **Framework**             FastAPI
-  **Real-Time Transport**   WebSockets
-  **Database**              PostgreSQL
-  **Authentication**        Google OAuth 2.0, JWT
-  **Containerization**      Docker & Docker Compose
 
 ------------------------------------------------------------------------
 
