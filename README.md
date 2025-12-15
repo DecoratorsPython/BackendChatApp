@@ -55,10 +55,10 @@ messages using a modern, scalable architecture.
               ↕
              WebSocket
 
--   REST endpoints manage authentication, profiles, friendships, and
+-   REST endpoints manage authentication, profiles, friendships and
     message history.
 -   WebSockets allow instantaneous delivery of messages.
--   PostgreSQL maintains users, friendships, and message metadata.
+-   PostgreSQL maintains users, friendships and message metadata.
 
 ------------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ messages using a modern, scalable architecture.
 
 ### **Prerequisites**
 
--   Docker & Docker Compose installed\
+-   Docker installed
 -   Google OAuth credentials (Client ID & Secret)
 
 ### **Environment Variables**
