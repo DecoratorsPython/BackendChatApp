@@ -53,7 +53,7 @@ messages using a modern, scalable architecture.
 
     Client ↔ FastAPI Backend ↔ PostgreSQL
               ↕
-             WebSocket Hub
+             WebSocket
 
 -   REST endpoints manage authentication, profiles, friendships, and
     message history.
