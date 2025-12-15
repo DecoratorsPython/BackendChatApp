@@ -2,7 +2,7 @@
 
 A lightweight, containerized backend service enabling real‑time
 messaging between users authenticated through Google OAuth.\
-This service powers friend discovery, real-time chat, and audio‑enabled
+This service powers friend discovery, real-time chat and audio‑enabled
 messages using a modern, scalable architecture.
 
 ------------------------------------------------------------------------
